@@ -121,6 +121,19 @@ public class UserController {
         return ResultUtils.success(userList);
 
     }
+    /**
+     * 更新用户信息
+     */
+    @PostMapping("/update")
+    public BaseResponse<Integer> updateUser(@RequestBody User user, HttpServletRequest request) {
+        if (user==null){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        User loginUser=userService.getCurrentUser(request);
+        int result=userService.updateUser(user,loginUser);
+        return ResultUtils.success(result);
+
+    }
 
     /**
      * 是否为管理员
