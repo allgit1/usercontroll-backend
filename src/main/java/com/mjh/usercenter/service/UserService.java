@@ -1,7 +1,7 @@
 package com.mjh.usercenter.service;
 
-import com.mjh.usercenter.model.domain.User;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.mjh.usercenter.model.domain.User;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -50,6 +50,34 @@ public interface UserService extends IService<User> {
      */
     int userLogout(HttpServletRequest request);
 
+    /**
+     * 获取当前用户
+     * @param request
+     * @return
+     */
+    User getCurrentUser(HttpServletRequest request);
+
+    /**
+     * 更新用户
+     * @param user
+     * @param loginUser
+     * @return
+     */
+    int updateUser(User user, User loginUser);
+
+    /**
+     * 根据request判断是否为管理员
+     * @param request
+     * @return
+     */
+    boolean isAdmin(HttpServletRequest request );
+
+    /**
+     * 根据user去判断是否为管理员
+     * @param loginUser
+     * @return
+     */
+    boolean isAdmin(User loginUser);
     /**
      * 根据标签搜索
      * @param tagNameList

@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.mjh.usercenter.common.ErrorCode;
+import com.mjh.usercenter.contant.UserConstant;
 import com.mjh.usercenter.exception.BusinessException;
 import com.mjh.usercenter.model.domain.User;
 import com.mjh.usercenter.service.UserService;
@@ -142,7 +143,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      * @return
      */
     @Override
-    public User getSafetyUser(User originUser)  {
+    public User getSafetyUser(User originUser) {
         if (originUser == null) {
             return null;
         }
@@ -164,6 +165,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     /**
      * 用户注销
+     *
      * @param request
      */
     @Override
@@ -174,21 +176,68 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
     @Override
+    public User getCurrentUser(HttpServletRequest request) {
+        if (request == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        User user = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+        return user;
+    }
+
+    @Override
+    public int updateUser(User user, User loginUser) {
+        Long userId = user.getId();
+        if (userId <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        //校验用户权限
+        //管理员可以更新任意信息
+        //用户只能更改自己的信息
+        if (!isAdmin(loginUser) && userId != loginUser.getId()) {
+            throw new BusinessException(ErrorCode.NO_AUTH);
+        }
+        User oldUser = this.getById(user.getId());
+        if (oldUser == null) {
+            throw new BusinessException(ErrorCode.NULL_ERROR);
+        }
+        return this.baseMapper.updateById(user);
+
+    }
+
+    @Override
+    public boolean isAdmin(HttpServletRequest request) {
+        User user = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
+        if (user == null || user.getUserRole() != UserConstant.ADMIN_ROLE) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean isAdmin(User loginUser) {
+        return loginUser.getUserRole() == UserConstant.ADMIN_ROLE;
+    }
+
+    @Override
     public List<User> searchUsersByTags(List<String> tagNameList) {
-        if (CollectionUtils.isEmpty(tagNameList)){
+        if (CollectionUtils.isEmpty(tagNameList)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         //1.查询所有用户
-        QueryWrapper<User>queryWrapper=new QueryWrapper<>();
-        List<User> userList=userMapper.selectList(queryWrapper);
-        Gson gson=new Gson();
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        List<User> userList = userMapper.selectList(queryWrapper);
+        Gson gson = new Gson();
         //2.在内存中判断是否包含要求得标签
         return userList.stream().filter(user -> {
-            String tagStr=user.getTags();
-            Set<String> tempTagNameSet=gson.fromJson(tagStr,new TypeToken<Set<String>>(){}.getType());
-            tempTagNameSet= Optional.ofNullable(tempTagNameSet).orElse(new HashSet<>());
+            String tagStr = user.getTags();
+            Set<String> tempTagNameSet = gson.fromJson(tagStr, new TypeToken<Set<String>>() {
+            }.getType());
+            tempTagNameSet = Optional.ofNullable(tempTagNameSet).orElse(new HashSet<>());
             for (String tagName : tagNameList) {
-                if (!tempTagNameSet.contains(tagName)){
+                if (!tempTagNameSet.contains(tagName)) {
                     return false;
                 }
             }

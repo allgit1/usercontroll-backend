@@ -132,7 +132,6 @@ public class UserController {
         User loginUser=userService.getCurrentUser(request);
         int result=userService.updateUser(user,loginUser);
         return ResultUtils.success(result);
-
     }
 
     /**
