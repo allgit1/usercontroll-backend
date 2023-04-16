@@ -28,7 +28,7 @@ import static com.mjh.usercenter.contant.UserConstant.USER_LOGIN_STATE;
  */
 @RestController
 @RequestMapping("/user")
-@CrossOrigin(origins = {"http://127.0.0.1:5173/"})
+@CrossOrigin(origins = {"http://127.0.0.1:5173","http://localhost:5173/"}, allowCredentials = "true")
 public class UserController {
 
     @Resource
@@ -55,12 +55,12 @@ public class UserController {
         if (userLoginRequest == null) {
             return ResultUtils.error(ErrorCode.PARAMS_ERROR);
         }
-        String userAccount = userLoginRequest.getUserAccount();
+         String userAccount = userLoginRequest.getUserAccount();
         String userPassword = userLoginRequest.getUserPassword();
-        if (StringUtils.isAnyBlank(userAccount, userPassword)) {
+         if (StringUtils.isAnyBlank(userAccount, userPassword)) {
             return ResultUtils.error(ErrorCode.PARAMS_ERROR);
         }
-        User user = userService.userLogin(userAccount, userPassword, request);
+         User user = userService.userLogin(userAccount, userPassword, request);
         return ResultUtils.success(user);
     }
 
@@ -75,16 +75,18 @@ public class UserController {
 
     @GetMapping("/current")
     public BaseResponse<User> getCurrentUser(HttpServletRequest request) {
-        Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
-        User currentUser = (User) userObj;
-        if (currentUser == null) {
-            throw new BusinessException(ErrorCode.NOT_LOGIN);
-        }
-        long userId = currentUser.getId();
-        // TODO 校验用户是否合法
-        User user = userService.getById(userId);
-        User safetyUser = userService.getSafetyUser(user);
-        return ResultUtils.success(safetyUser);
+        User loginUser=userService.getLoginUser(request);
+
+//        Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
+//        User currentUser = (User) userObj;
+//        if (currentUser == null) {
+//            throw new BusinessException(ErrorCode.NOT_LOGIN);
+//        }
+//        long userId = currentUser.getId();
+//        // TODO 校验用户是否合法
+//        User user = userService.getById(userId);
+//        User safetyUser = userService.getSafetyUser(user);
+        return ResultUtils.success(loginUser);
     }
 
     @GetMapping("/search")
@@ -132,6 +134,7 @@ public class UserController {
         User loginUser=userService.getCurrentUser(request);
         int result=userService.updateUser(user,loginUser);
         return ResultUtils.success(result);
+
     }
 
     /**

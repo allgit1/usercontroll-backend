@@ -189,7 +189,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Override
     public int updateUser(User user, User loginUser) {
-        Long userId = user.getId();
+        long userId = user.getId();
         if (userId <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -243,6 +243,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             }
             return true;
         }).map(this::getSafetyUser).collect(Collectors.toList());
+    }
+
+    @Override
+    public User getLoginUser(HttpServletRequest request) {
+        Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
+        User user = (User) userObj;
+        if (user == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+        Long id = user.getId();
+        //TODO 校验用户是否合法
+        //查数据库，因为用户信息可能发生变化
+        User currentUser = this.getById(id);
+        if(currentUser==null){
+            throw new BusinessException(ErrorCode.NULL_ERROR);
+        }
+        return this.getSafetyUser(currentUser);
     }
 
 
